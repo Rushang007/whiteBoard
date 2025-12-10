@@ -1,0 +1,26 @@
+.fullscreen {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #0b1220;
+  display: flex;
+}
+
+.board-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 24px;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  resize: none;
+  font-family: 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  caret-color: #a5b4fc;
+}
+
+.board-input::placeholder {
+  color: #64748b;
+}
