@@ -76,7 +76,7 @@ function App() {
         className="board-input"
         value={content}
         onChange={handleChange}
-        placeholder="Start writing. Everyone sees the same board."
+        placeholder="Today's tasks - Add TODO tasks here."
         spellCheck="false"
       />
     </div>
