@@ -1,32 +1,58 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { readFile, writeFile, stat, access } from 'fs/promises'
-import { constants as fsConstants } from 'fs'
 import { fileURLToPath } from 'url'
+import sqlite3 from 'sqlite3'
 import path from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const boardFile = path.join(__dirname, 'board.txt')
+const dbPath = process.env.BOARD_DB || path.join(__dirname, 'board.db')
 
-const ensureBoardFile = async () => {
-  try {
-    await access(boardFile, fsConstants.F_OK)
-  } catch {
-    await writeFile(boardFile, '', 'utf8')
+sqlite3.verbose()
+const db = new sqlite3.Database(dbPath)
+
+const run = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.run(sql, params, function runCb(err) {
+      if (err) reject(err)
+      else resolve(this)
+    })
+  })
+
+const get = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err)
+      else resolve(row)
+    })
+  })
+
+const ensureDb = async () => {
+  await run(
+    `CREATE TABLE IF NOT EXISTS board (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      content TEXT NOT NULL DEFAULT '',
+      updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000)
+    )`
+  )
+  const row = await get('SELECT id FROM board WHERE id = 1')
+  if (!row) {
+    await run('INSERT INTO board (id, content, updated_at) VALUES (1, "", strftime(\'%s\',\'now\') * 1000)')
   }
 }
 
 const readBoard = async () => {
-  await ensureBoardFile()
-  const content = await readFile(boardFile, 'utf8')
-  const { mtimeMs } = await stat(boardFile)
-  return { content, updatedAt: mtimeMs }
+  await ensureDb()
+  const row = await get('SELECT content, updated_at FROM board WHERE id = 1')
+  return { content: row?.content || '', updatedAt: row?.updated_at || Date.now() }
 }
 
 const writeBoard = async (content) => {
-  await ensureBoardFile()
-  await writeFile(boardFile, content ?? '', 'utf8')
+  await ensureDb()
+  await run('UPDATE board SET content = ?, updated_at = ? WHERE id = 1', [
+    content ?? '',
+    Date.now(),
+  ])
   return readBoard()
 }
 
